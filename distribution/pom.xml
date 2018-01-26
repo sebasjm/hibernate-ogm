@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ~ Hibernate OGM, Domain model persistence for NoSQL datastores
+ ~
+ ~ License: GNU Lesser General Public License (LGPL), version 2.1 or later
+ ~ See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.hibernate.ogm</groupId>
+        <artifactId>hibernate-ogm-parent</artifactId>
+        <version>5.2.0.CR1</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>hibernate-ogm-distribution</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Hibernate OGM Distribution</name>
+    <description>Creates the distribution package for Hibernate OGM</description>
+
+    <properties>
+        <assembly.name>hibernate-ogm-${project.version}</assembly.name>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <configuration>
+                    <!-- Skipping it because neo4j uses a different Lucene version -->
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <outputDirectory>${project.build.directory}/dist/</outputDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-model</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.lucene</groupId>
+                                    <artifactId>lucene-core</artifactId>
+                                    <version>${luceneVersion}</version>
+                                    <type>jar</type>
+                                </artifactItem>
+                           </artifactItems>
+                            <outputDirectory>${project.build.directory}/lib/neo4j</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-jbossmodules-to-dist</id>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <phase>install</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/dist/</outputDirectory>
+                            <includeGroupIds>${project.groupId}</includeGroupIds>
+                            <includeArtifactIds>hibernate-ogm-modules</includeArtifactIds>
+                            <includeTypes>zip</includeTypes>
+                            <includeClassifiers>wildfly-11-dist</includeClassifiers>
+                            <excludeTransitive>true</excludeTransitive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.hibernate.ogm</groupId>
+            <artifactId>hibernate-ogm-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.ogm</groupId>
+            <artifactId>hibernate-ogm-infinispan-embedded</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jboss-logging</artifactId>
+                    <groupId>org.jboss.logging</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.ogm</groupId>
+            <artifactId>hibernate-ogm-infinispan-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.ogm</groupId>
+            <artifactId>hibernate-ogm-mongodb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.ogm</groupId>
+            <artifactId>hibernate-ogm-neo4j</artifactId>
+        </dependency>
+
+        <!--
+            The following dependencies are listed because their are optional or shared among different backends.
+            Because of the way "useTransitiveFiltering" works in the assembly plugin, we also add some exclusion
+            patterns so that a common transitive dependency is added in the right folder.
+        -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-search-orm</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jboss-logging</artifactId>
+                    <groupId>org.jboss.logging</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.hql</groupId>
+            <artifactId>hibernate-hql-lucene</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>hibernate-jpa-2.1-api</artifactId>
+                    <groupId>org.hibernate.javax.persistence</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jboss-logging</artifactId>
+                    <groupId>org.jboss.logging</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.parboiled</groupId>
+            <artifactId>parboiled-java</artifactId>
+        </dependency>
+
+        <!-- Provided dependencies -->
+        <dependency>
+            <groupId>org.jboss.spec.javax.transaction</groupId>
+            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-annotations</artifactId>
+        </dependency>
+
+        <!-- Not required by the infinispan module itself, but we still want to package these-->
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-directory-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-lucene-directory</artifactId>
+            <!-- We are excluding lucene libraries since they are already in the optional folder -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.lucene</groupId>
+                    <artifactId>lucene-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.lucene</groupId>
+                    <artifactId>lucene-analyzers-common</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>hibernate-ogm-modules</artifactId>
+            <classifier>wildfly-11-dist</classifier>
+            <type>zip</type>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>doc</id>
+            <activation>
+                <!-- Needs to match activation of "doc" profile in parent pom!  -->
+                <jdk>[1.8, 1.9)</jdk>
+                <property>
+                    <name>skipDocs</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.hibernate.ogm</groupId>
+                    <artifactId>hibernate-ogm-javadoc</artifactId>
+                    <version>${project.version}</version>
+                    <classifier>javadoc</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+</project>

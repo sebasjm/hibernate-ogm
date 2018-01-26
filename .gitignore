@@ -1,0 +1,37 @@
+# Our build scripts - necessary for our release jobs
+hibernate-noorm-release-scripts
+
+#OS
+.DS_Store
+
+#IDEs
+
+# IntelliJ specific files/directories
+.idea
+*.ipr
+*.iws
+*.iml
+atlassian-ide-plugin.xml
+
+#XMLEditor
+*.*xml~
+
+# Eclipse specific files/directories
+.classpath
+.project
+.factorypath
+.settings
+.externalToolBuilders
+bin/
+
+# NetBeans specific files/directories
+.nbattrs
+
+#build
+target/
+work/
+
+#test output
+test-output/
+transaction.log
+infinispan.log
